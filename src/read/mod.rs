@@ -4,6 +4,3 @@ pub mod archive;
 pub mod file;
 /// Compression reader stream wrapper
 pub mod comp_reader;
-
-/// File info struct
-pub mod file_info;

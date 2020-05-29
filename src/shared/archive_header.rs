@@ -13,17 +13,18 @@ use serde::{
 pub struct ArchiveHeader {
     /// The library version used to create the archive
     /// 
-    /// Format: (MAJOR, MINOR, PATCH)
-    pub version: (u8, u8, u8),
+    /// Format: 16B long array with a UTF-8 encoded version string,
+    /// preferably using semantic versioning
+    pub version: [u8; 16],
     /// Byte range that points to the most up-to-date directory
-    pub directory: Range<u64>
+    pub directory_range: Range<u64>
 }
 
 impl Default for ArchiveHeader {
     fn default() -> Self {
         Self {
-            version: crate::get_version_tuple(),
-            directory: 0..0
+            version: crate::get_version_bytes(),
+            directory_range: 0..0
         }
     }
 }

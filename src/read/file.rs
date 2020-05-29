@@ -4,7 +4,8 @@ use crate::{
         error::{
             Error,
             Result
-        }
+        },
+        file_metadata::FileMetadata
     },
     read::{
         comp_reader::CompReader
@@ -18,6 +19,7 @@ use std::{
         Result as IOResult,
         SeekFrom
     },
+    fs::Metadata,
     ops::{
         Range,
         
@@ -29,11 +31,11 @@ pub struct File<'r, R: Read + Seek + 'r> {
     /// An internal reference to the archives' source.
     comp_reader: CompReader<'r, R>,
     /// A counter for how many bytes were written.
-    data_read: usize,
-    /// Total size of the data.
-    data_size: usize,
+    raw_bytes_read: usize,
     /// Total size of the uncompressed data.
-    raw_size: usize
+    raw_size: usize,
+    /// Optional Metadata override
+    metadata_opt: Option<FileMetadata>
 }
 
 impl<'r, R: Read + Seek + 'r> File<'r, R> {
@@ -47,18 +49,24 @@ impl<'r, R: Read + Seek + 'r> File<'r, R> {
         Ok(
             Self {
                 comp_reader: comp_reader,
-                data_read: 0,
-                data_size: (data_range.end - data_range.start) as usize,
-                raw_size: raw_size as usize
+                raw_bytes_read: 0,
+                raw_size: raw_size as usize,
+                metadata_opt: None
             }
         )
+    }
+
+    /// ...with a given raw metadata
+    pub fn with_metadata(mut self, metadata_ref: &Metadata) -> Self {
+        self.metadata_opt = Some(metadata_ref.into());
+        self
     }
 }
 
 impl<'r, R: Read + Seek + 'r> Read for File<'r, R> {
     fn read(&mut self, buf: &mut [u8]) -> IOResult<usize> {
         let buffer_length = buf.len();
-        let remaining_data = self.raw_size - self.data_read;
+        let remaining_data = self.raw_size - self.raw_bytes_read;
         let read_length = if buffer_length > remaining_data {
             remaining_data
         } else {
@@ -68,7 +76,7 @@ impl<'r, R: Read + Seek + 'r> Read for File<'r, R> {
             Ok(0)
         } else {
             self.comp_reader.read_exact(&mut buf[0..read_length])?;
-            self.data_read += read_length;
+            self.raw_bytes_read += read_length;
             Ok(read_length)
         }
     }

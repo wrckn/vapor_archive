@@ -6,6 +6,7 @@ use std::{
     fs::{
         File
     },
+    path::PathBuf,
     error::Error
 };
 
@@ -123,6 +124,62 @@ fn test_reader_info_text_uncompressed() -> Result<(), Box<dyn Error>> {
     for file in archive.get_file_list() {
         println!("\t{}", file);
         println!("{}", archive.get_file_info(&file)?);
+    }
+    Ok(())
+}
+
+#[test]
+fn test_reader_info_mixed_compressed() -> Result<(), Box<dyn Error>> {
+    let file = File::open("tests/out/mixed_c.var")?;
+    let mut archive = VarArchive::new(file)?;
+    println!("Files in this archive:");
+    for file in archive.get_file_list() {
+        println!("\t{}", file);
+        println!("{}", archive.get_file_info(&file)?);
+    }
+    Ok(())
+}
+
+#[test]
+fn test_reader_info_mixed_uncompressed() -> Result<(), Box<dyn Error>> {
+    let file = File::open("tests/out/mixed_u.var")?;
+    let mut archive = VarArchive::new(file)?;
+    println!("Files in this archive:");
+    for file in archive.get_file_list() {
+        println!("\t{}", file);
+        println!("{}", archive.get_file_info(&file)?);
+    }
+    Ok(())
+}
+
+#[test]
+fn test_reader_mixed_compressed() -> Result<(), Box<dyn Error>> {
+    let file = File::open("tests/out/mixed_c.var")?;
+    let mut archive = VarArchive::new(file)?;
+    let out_dir = PathBuf::from("tests/out");
+    println!("Files in this archive:");
+    for file in archive.get_file_list() {
+        println!("\t{}", file);
+        println!("{}", archive.get_file_info(&file)?);
+        let mut var_file = archive.get_file(&file)?;
+        let mut out_file = File::create(out_dir.join(&file))?;
+        std::io::copy(&mut var_file, &mut out_file)?;
+    }
+    Ok(())
+}
+
+#[test]
+fn test_reader_mixed_uncompressed() -> Result<(), Box<dyn Error>> {
+    let file = File::open("tests/out/mixed_u.var")?;
+    let mut archive = VarArchive::new(file)?;
+    let out_dir = PathBuf::from("tests/out");
+    println!("Files in this archive:");
+    for file in archive.get_file_list() {
+        println!("\t{}", file);
+        println!("{}", archive.get_file_info(&file)?);
+        let mut var_file = archive.get_file(&file)?;
+        let mut out_file = File::create(out_dir.join(&file))?;
+        std::io::copy(&mut var_file, &mut out_file)?;
     }
     Ok(())
 }

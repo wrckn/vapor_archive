@@ -5,6 +5,7 @@ use crate::{
             Result
         },
         file_header::FileHeader,
+        file_info::FileInfo,
         compression::Compression,
         encryption::Encryption,
         directory::Directory
@@ -16,17 +17,12 @@ use crate::{
 
 use std::{
     io::{
-        Read,
         Write,
         Seek,
         SeekFrom,
         Result as IoResult,
     },
-    fs::{
-        File as StdFile
-    },
     ops::{
-        Range,
         Drop
     }
 };
@@ -53,11 +49,14 @@ pub struct File<'w, W: Write + Seek + 'w> {
     /// Filename,
     filename: String,
     /// Directory pointer
-    directory: *mut Directory
+    directory: &'w mut Directory
 }
 
 impl<'w, W: Write + Seek + 'w> File<'w, W> {
-    pub fn new(mut writer: &'w mut W, directory_ptr: *mut Directory, filename: &str, compression_type: Compression, encryption_type: Encryption) -> Result<Self> {
+    /// Creates a new File Writer
+    /// 
+    /// Wraps a writer and creates a new file with the given parameters
+    pub fn new(writer: &'w mut W, directory: &'w mut Directory, filename: &str, compression_type: Compression, _encryption_type: Encryption) -> Result<Self> {
         let data_start = writer.seek(SeekFrom::Current(0)).map_err(|_| Error::Unknown)?;
         println!("BYTE OFFSET OF THIS FILE: {}", data_start);
         Ok(
@@ -67,10 +66,13 @@ impl<'w, W: Write + Seek + 'w> File<'w, W> {
                 filename: String::from(filename),
                 raw_hasher: Blake2s::new(),
                 raw_size: 0,
-                directory: directory_ptr
+                directory: directory
             }
         )
     }
+
+    /// Drops the File Writer early, writing the header
+    pub fn finish(self) {}
 }
 
 impl<'w, W: Write + Seek + 'w> Write for File<'w, W> {
@@ -94,20 +96,21 @@ impl<'w, W: Write + Seek + 'w> Drop for File<'w, W> {
         let data_end = self.comp_writer.seek(SeekFrom::Current(0)).unwrap();
         println!("DATA SIZE OF THIS FILE: {}", data_end - self.data_begin);
         let file_header_begin = data_end;
-        let file_header = FileHeader::default()
+        let file_info = FileInfo::default()
             .with_compression(compression_type)
             .with_raw_size(self.raw_size as u64)
-            .with_data_range(self.data_begin..data_end)
+            .with_data_size(data_end - self.data_begin)
             .with_raw_checksum(raw_checksum)
             .with_data_checksum(data_checksum);
+        let file_header = FileHeader::default()
+            .with_data_range(self.data_begin..data_end)
+            .with_file_info(file_info);
         bincode::serialize_into(&mut self.comp_writer, &file_header).unwrap();
         let file_header_end = self.comp_writer.seek(SeekFrom::Current(0)).unwrap();
         println!("Position after serialize: {}", file_header_end);
         println!("Size difference: {}", file_header_end - file_header_begin);
         println!("Written file header from byte #{} to #{}.", file_header_begin, file_header_end);
         println!("RAW SIZE OF THIS FILE: {}", self.raw_size);
-        unsafe {
-            self.directory.as_mut().unwrap().set_file(&self.filename, file_header_begin..file_header_end);
-        }
+        self.directory.set_file(&self.filename, file_header_begin..file_header_end);
     }
 }

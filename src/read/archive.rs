@@ -3,14 +3,14 @@ use crate::{
         directory::Directory,
         archive_header::ArchiveHeader,
         file_header::FileHeader,
+        file_info::FileInfo,
         error::{
             Error,
             Result
         }
     },
     read::{
-        file::File,
-        file_info::FileInfo
+        file::File
     }
 };
 
@@ -55,7 +55,7 @@ impl<'r, R: Read + Seek + 'r> Archive<R> {
         // source.read_exact(&mut directory_bytes)
         //     .map_err(|_| Error::CantReadDirectory)?;
         // // Parse the directory
-        let dir_begin = header.directory.start;
+        let dir_begin = header.directory_range.start;
         source.seek(SeekFrom::Start(dir_begin))
             .map_err(|_| Error::CantReadDirectory)?;
         let directory: Directory = bincode::deserialize_from(&mut source)
@@ -78,7 +78,7 @@ impl<'r, R: Read + Seek + 'r> Archive<R> {
         let file_header_range = self.directory.get_file(path)
             .ok_or(Error::FileNotFound(String::from(path)))?;
         let file_header = self.get_file_header(file_header_range)?;
-        File::new(&mut self.source, file_header.raw_size, file_header.data_range.clone(), file_header.get_compression())
+        File::new(&mut self.source, file_header.file_info.raw_size, file_header.data_range.clone(), file_header.file_info.compression.clone())
     }
 
     /// Gets a files info by path
@@ -86,7 +86,7 @@ impl<'r, R: Read + Seek + 'r> Archive<R> {
         let file_header_range = self.directory.get_file(path)
             .ok_or(Error::FileNotFound(String::from(path)))?;
         let file_header = self.get_file_header(file_header_range)?;
-        let file_info = FileInfo::from(&file_header)
+        let file_info = file_header.file_info.clone()
             .with_filename(path);
         Ok(
             file_info

@@ -1,7 +1,12 @@
+use serde::{
+    Serialize,
+    Deserialize
+};
+
 /// Encryption type enum
 /// 
 /// Represents the different available Encryption types.
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Encryption {
     /// No encryption
     None,

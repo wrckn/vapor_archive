@@ -12,3 +12,5 @@ pub mod archive_header;
 pub mod error;
 /// File metadata
 pub mod file_metadata;
+/// File info struct
+pub mod file_info;

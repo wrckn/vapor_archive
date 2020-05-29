@@ -1,5 +1,10 @@
+use serde::{
+    Serialize,
+    Deserialize
+};
+
 /// Compression enum. Describes the compression algorithm used.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum Compression {
     /// No compression is used
     None,

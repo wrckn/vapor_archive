@@ -4,8 +4,7 @@ use std::{
         Seek,
         SeekFrom,
         Result as IoResult
-    },
-    marker::PhantomData
+    }
 };
 
 use blake2::{
@@ -13,21 +12,27 @@ use blake2::{
     Digest
 };
 
+/// HashWriter struct
+/// 
+/// Wraps another writer and recors the written bytes to
+/// a BLAKE2S hasher, whose hash you can retrieve later
 pub struct HashWriter<'w, W: Write + Seek + 'w> {
+    /// A reference to the underlying writer
     writer: &'w mut W,
-    hasher: Blake2s,
-    phantom_data: PhantomData<&'w W>
+    /// The BLAKE2S hasher
+    hasher: Blake2s
 }
 
 impl<'w, W: Write + Seek + 'w> HashWriter<'w, W> {
+    /// Creates a new instance, wrapping the given writer
     pub fn new(writer: &'w mut W) -> Self {
         Self {
             writer: writer,
-            hasher: Blake2s::new(),
-            phantom_data: PhantomData::default()
+            hasher: Blake2s::new()
         }
     }
-
+    
+    /// Retrieves the BLAKE2S hash as a 32B array, resetting the hasher
     pub fn get_hash(&mut self) -> [u8; 32] {
         self.hasher.result_reset().into()
     }

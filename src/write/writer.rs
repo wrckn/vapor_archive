@@ -1,11 +1,9 @@
 use std::{
     io::{
         Seek,
-        Read,
         Write,
         SeekFrom
-    },
-    marker::PhantomData
+    }
 };
 
 use crate::{
@@ -14,7 +12,6 @@ use crate::{
         encryption::Encryption,
         directory::Directory,
         archive_header::ArchiveHeader,
-        file_header::FileHeader,
         error::{
             Error,
             Result
@@ -28,12 +25,15 @@ use crate::{
 /// 
 /// Used for creating .var Archives
 pub struct Writer<W: Write + Seek> {
+    /// The internal, root-level writer
     sink: W,
+    /// The directory struct, mapping filenames to byte ranges
     directory: Directory
 }
 
 /// Creates a new Writer, wrapping a given Write struct
 impl<'w, W: Write + Seek> Writer<W> {
+    /// Creates a new instance, wrapping the given writer
     pub fn new(mut sink: W) -> Result<Writer<W>> {
         sink.write(b"VAR")
             .map_err(|_| Error::CantWriteMagicBytes)?;
@@ -64,7 +64,7 @@ impl<'w, W: Write + Seek> Drop for Writer<W> {
         let directory_end = self.sink.seek(SeekFrom::Current(0)).unwrap();
         self.sink.seek(SeekFrom::Start(3)).unwrap();
         let mut archive_header = ArchiveHeader::default();
-        archive_header.directory = directory_begin..directory_end;
+        archive_header.directory_range = directory_begin..directory_end;
         bincode::serialize_into(&mut self.sink, &archive_header).unwrap();
     }
 }
