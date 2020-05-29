@@ -23,7 +23,7 @@ exclude = [
 
 [dependencies]
 # Used for de-/serializing internal file structures
-serde = { version = "*", features = [ "derive" ] }
+serde = { version = "1.0.110", features = [ "derive" ] }
 bincode = "1.2.1"
 # Used for compression
 zstd = "0.5.2"
