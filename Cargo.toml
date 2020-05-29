@@ -1,0 +1,26 @@
+[package]
+name = "vapor_archive"
+version = "0.1.0"
+authors = ["Daniel Wanner <daniel.wanner@pm.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Used for de-/serializing internal file structures
+serde = { version = "*", features = [ "derive" ] }
+bincode = "1.2.1"
+# Used for compression
+zstd = "0.5.2"
+# Used for encryption
+rust-crypto = "0.2.36"
+aes-stream = "0.2.1"
+# Used for checksums
+blake2 = "0.8.1"
+# Used for detecting # of CPUs
+num_cpus = "1.13.0"
+
+# Used for handling dates
+[dependencies.chrono]
+version = "0.4.11"
+features = [ "serde" ]
